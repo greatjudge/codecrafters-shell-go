@@ -12,14 +12,17 @@ const (
 )
 
 func main() {
-	fmt.Print("$ ")
 
-	reader := bufio.NewReader(os.Stdin)
+	for {
+		fmt.Print("$ ")
 
-	cmd, err := reader.ReadString('\n')
-	if err != nil {
-		log.Panic(err)
+		reader := bufio.NewReader(os.Stdin)
+
+		cmd, err := reader.ReadString('\n')
+		if err != nil {
+			log.Panic(err)
+		}
+
+		fmt.Printf("%s: %s\n", cmd[:len(cmd)-1], errorMsg)
 	}
-
-	fmt.Printf("%s: %s\n", cmd[:len(cmd)-1], errorMsg)
 }
