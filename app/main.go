@@ -6,6 +6,8 @@ import (
 	"log"
 	"os"
 	"strings"
+
+	"github.com/samber/lo"
 )
 
 const (
@@ -13,6 +15,15 @@ const (
 
 	exitCMD = "exit"
 	echoCMD = "echo"
+	typeCMD = "type"
+)
+
+var (
+	builtInCommands = []string{
+		exitCMD,
+		echoCMD,
+		typeCMD,
+	}
 )
 
 func main() {
@@ -36,6 +47,8 @@ repl:
 			break repl
 		case echoCMD:
 			echo(args)
+		case typeCMD:
+			typeFunc(args)
 		default:
 			fmt.Printf("%s: %s\n", cmd, errorMsg)
 		}
@@ -53,4 +66,12 @@ func extractCommand(cmd string) (string, string) {
 
 func echo(args string) {
 	fmt.Println(args)
+}
+
+func typeFunc(args string) {
+	if lo.Contains(builtInCommands, args) {
+		fmt.Printf("%v is a shell builtin\n", args)
+	} else {
+		fmt.Printf("%v not found\n", args)
+	}
 }
