@@ -9,10 +9,13 @@ import (
 
 const (
 	errorMsg = "command not found"
+
+	exitCmd = "exit"
 )
 
 func main() {
 
+repl:
 	for {
 		fmt.Print("$ ")
 
@@ -23,6 +26,13 @@ func main() {
 			log.Panic(err)
 		}
 
-		fmt.Printf("%s: %s\n", cmd[:len(cmd)-1], errorMsg)
+		cmd = cmd[:len(cmd)-1]
+
+		switch cmd {
+		case exitCmd:
+			break repl
+		default:
+			fmt.Printf("%s: %s\n", cmd, errorMsg)
+		}
 	}
 }
