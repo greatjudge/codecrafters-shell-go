@@ -5,16 +5,17 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 )
 
 const (
 	errorMsg = "command not found"
 
-	exitCmd = "exit"
+	exitCMD = "exit"
+	echoCMD = "echo"
 )
 
 func main() {
-
 repl:
 	for {
 		fmt.Print("$ ")
@@ -28,11 +29,28 @@ repl:
 
 		cmd = cmd[:len(cmd)-1]
 
+		cmd, args := extractCommand(cmd)
+
 		switch cmd {
-		case exitCmd:
+		case exitCMD:
 			break repl
+		case echoCMD:
+			echo(args)
 		default:
 			fmt.Printf("%s: %s\n", cmd, errorMsg)
 		}
 	}
+}
+
+func extractCommand(cmd string) (string, string) {
+	parts := strings.SplitN(cmd, " ", 2)
+	if len(parts) < 2 {
+		return cmd, ""
+	}
+
+	return parts[0], parts[1]
+}
+
+func echo(args string) {
+	fmt.Println(args)
 }
