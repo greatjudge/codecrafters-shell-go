@@ -13,85 +13,72 @@ import (
 	"github.com/samber/lo"
 )
 
-type handlerFunc func(args []string)
+type handlerFunc func(cmd Command)
 
 const (
 	errorMsg = "command not found"
 	errNotFoundInPATH
 
 	exitCMD = "exit"
-	echoCMD = "echo"
-	typeCMD = "type"
-	pwdCMD  = "pwd"
 )
 
 var (
-	builtInCommands = []string{
-		exitCMD,
-		echoCMD,
-		typeCMD,
-		pwdCMD,
+	handlerByName = map[string]handlerFunc{
+		"echo": echo,
+		"type": typeHandler,
+		"pwd":  pwd,
+	}
+
+	builtIn = []string{
+		"exit",
+		"echo",
+		"type",
+		"pwd",
 	}
 )
 
 func main() {
-repl:
 	for {
 		fmt.Print("$ ")
 
 		reader := bufio.NewReader(os.Stdin)
 
-		cmd, err := reader.ReadString('\n')
+		raw, err := reader.ReadString('\n')
 		if err != nil {
 			log.Panic(err)
 		}
 
-		cmd = strings.TrimSpace(cmd)
+		cmd := ParseCommand(raw)
 
-		cmd, args := extractCommand(cmd)
+		if cmd.Name == exitCMD {
+			break
+		}
 
-		switch cmd {
-		case exitCMD:
-			break repl
-		case echoCMD:
-			echo(args)
-		case typeCMD:
-			typeFunc(args)
-		case pwdCMD:
-			pwd()
-		default:
-			runExecutableHandler(cmd, args)
+		handler, ok := handlerByName[cmd.Name]
+		if ok {
+			handler(cmd)
+		} else {
+			runExecutableHandler(cmd)
 		}
 	}
 }
 
-func extractCommand(cmd string) (string, string) {
-	parts := strings.SplitN(cmd, " ", 2)
-	if len(parts) < 2 {
-		return cmd, ""
-	}
-
-	return parts[0], parts[1]
+func echo(cmd Command) {
+	fmt.Println(cmd.RawArgs)
 }
 
-func echo(args string) {
-	fmt.Println(args)
-}
-
-func runExecutableHandler(cmd string, args string) {
-	cmdPath, err := lookPath(cmd)
+func runExecutableHandler(cmd Command) {
+	cmdPath, err := lookPath(cmd.Name)
 	if err != nil {
 		fmt.Printf("%s: %s\n", cmd, errorMsg)
 
 		return
 	}
 
-	cmdArgs := parseArgs(cmd, args)
-
-	executable := exec.Command(cmdPath, cmdArgs[1:]...)
+	executable := exec.Command(cmdPath, cmd.Args[1:]...)
 	executable.Stdout = os.Stdout
 	executable.Stderr = os.Stderr
-	executable.Args = cmdArgs // Set args to use original command name as args[0]
+	executable.Args = cmd.Args // Set args to use original command name as args[0]
 
 	err = executable.Run()
 	if err != nil {
@@ -101,33 +88,21 @@ func runExecutableHandler(cmd string, args string) {
 	}
 }
 
-func parseArgs(cmd, args string) []string {
-	parsed := []string{cmd}
-
-	if len(args) == 0 {
-		return parsed
-	}
-
-	parsed = append(parsed, strings.Split(args, " ")...)
-
-	return parsed
-}
-
-func typeFunc(args string) {
-	if lo.Contains(builtInCommands, args) {
-		fmt.Printf("%v is a shell builtin\n", args)
+func typeHandler(cmd Command) {
+	if lo.Contains(builtIn, cmd.RawArgs) {
+		fmt.Printf("%v is a shell builtin\n", cmd.RawArgs)
 
 		return
 	}
 
-	absPath, err := lookPath(args)
+	absPath, err := lookPath(cmd.RawArgs)
 	if err != nil {
-		fmt.Printf("%s not found\n", args)
+		fmt.Printf("%s not found\n", cmd.RawArgs)
 
 		return
 	}
 
-	fmt.Printf("%s is %s\n", args, absPath)
+	fmt.Printf("%s is %s\n", cmd.RawArgs, absPath)
 }
 
 // find path to executable command
@@ -184,7 +159,7 @@ func IsExecutedAny(mode fs.FileMode) bool {
 	return mode&0111 != 0
 }
 
-func pwd() {
+func pwd(_ Command) {
 	d, err := os.Getwd()
 	if err != nil {
 		fmt.Println(err.Error())
