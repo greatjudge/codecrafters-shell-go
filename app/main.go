@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"os/exec"
 	"strings"
 
 	"github.com/samber/lo"
@@ -71,7 +72,16 @@ func echo(args string) {
 func typeFunc(args string) {
 	if lo.Contains(builtInCommands, args) {
 		fmt.Printf("%v is a shell builtin\n", args)
-	} else {
-		fmt.Printf("%v not found\n", args)
+
+		return
 	}
+
+	absPath, err := exec.LookPath(args)
+	if err != nil {
+		fmt.Printf("%s not found\n", args)
+
+		return
+	}
+
+	fmt.Printf("%s is %s\n", args, absPath)
 }
