@@ -15,6 +15,7 @@ import (
 
 const (
 	errorMsg = "command not found"
+	errNotFoundInPATH
 
 	exitCMD = "exit"
 	echoCMD = "echo"
@@ -72,33 +73,38 @@ func echo(args string) {
 }
 
 func runExecutableHandler(cmd string, args string) {
-	_, err := lookPath(cmd)
+	cmdPath, err := lookPath(cmd)
 	if err != nil {
 		fmt.Printf("%s: %s\n", cmd, errorMsg)
 
 		return
 	}
 
-	cmdArgs := parseArgs(args)
+	cmdArgs := parseArgs(cmd, args)
 
-	executable := exec.Command(cmd, cmdArgs...)
+	executable := exec.Command(cmdPath, cmdArgs[1:]...)
+	executable.Stdout = os.Stdout
+	executable.Stderr = os.Stderr
+	executable.Args = cmdArgs // Set args to use original command name as args[0]
 
-	out, err := executable.Output()
+	err = executable.Run()
 	if err != nil {
 		fmt.Println("err: ", err)
 
 		return
 	}
-
-	fmt.Print(string(out))
 }
 
-func parseArgs(args string) []string {
+func parseArgs(cmd, args string) []string {
+	parsed := []string{cmd}
+
 	if len(args) == 0 {
-		return []string{}
+		return parsed
 	}
 
-	return strings.Split(args, " ")
+	parsed = append(parsed, strings.Split(args, " ")...)
+
+	return parsed
 }
 
 func typeFunc(args string) {
