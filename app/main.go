@@ -175,6 +175,8 @@ func pwd(_ Command) {
 func cd(cmd Command) {
 	dir := cmd.RawArgs
 
+	dir = insertHomeDir(dir)
+
 	err := os.Chdir(dir)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -187,4 +189,17 @@ func cd(cmd Command) {
 
 		return
 	}
+}
+
+func insertHomeDir(dir string) string {
+	if !strings.Contains(dir, "~") {
+		return dir
+	}
+
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	return strings.Replace(dir, "~", homeDir, 1)
 }
