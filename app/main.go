@@ -72,12 +72,12 @@ func echo(args string) {
 }
 
 func runExecutableHandler(cmd string, args string) {
-	// absPath, err := lookPath(cmd)
-	// if err != nil {
-	// 	fmt.Printf("%s: %s\n", cmd, errorMsg)
+	_, err := lookPath(cmd)
+	if err != nil {
+		fmt.Printf("%s: %s\n", cmd, errorMsg)
 
-	// 	return
-	// }
+		return
+	}
 
 	cmdArgs := parseArgs(args)
 
