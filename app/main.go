@@ -3,9 +3,10 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"io/fs"
 	"log"
 	"os"
-	"os/exec"
+	"path/filepath"
 	"strings"
 
 	"github.com/samber/lo"
@@ -76,7 +77,7 @@ func typeFunc(args string) {
 		return
 	}
 
-	absPath, err := exec.LookPath(args)
+	absPath, err := lookPath(args)
 	if err != nil {
 		fmt.Printf("%s not found\n", args)
 
@@ -84,4 +85,57 @@ func typeFunc(args string) {
 	}
 
 	fmt.Printf("%s is %s\n", args, absPath)
+}
+
+func lookPath(file string) (string, error) {
+	path := os.Getenv("PATH")
+
+	pathes := strings.Split(path, string(os.PathListSeparator))
+
+	var foundPath string
+
+	for _, p := range pathes {
+		err := filepath.WalkDir(p, func(path string, d fs.DirEntry, err error) error {
+			if err != nil {
+				return nil
+			}
+
+			if d.Name() != file {
+				return nil
+			}
+
+			info, err := os.Lstat(path)
+			if err != nil {
+				return nil
+			}
+
+			if IsExecutedAny(info.Mode()) {
+				foundPath = path
+
+				return filepath.SkipAll
+			}
+
+			return nil
+		})
+		if err != nil {
+			return "", err
+		}
+
+		if foundPath != "" {
+			break
+		}
+	}
+
+	if foundPath == "" {
+		return "", fmt.Errorf("not found")
+	}
+
+	return foundPath, nil
+}
+
+// mode - bitmask rwxrwxrwx (in octal 0777)
+// 3 user, 3 group, 3 other
+// & 001001001 (in octal in go: 0111)
+func IsExecutedAny(mode fs.FileMode) bool {
+	return mode&0111 != 0
 }
