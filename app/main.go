@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"log"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -40,7 +41,7 @@ repl:
 			log.Panic(err)
 		}
 
-		cmd = cmd[:len(cmd)-1]
+		cmd = strings.TrimSpace(cmd)
 
 		cmd, args := extractCommand(cmd)
 
@@ -52,7 +53,7 @@ repl:
 		case typeCMD:
 			typeFunc(args)
 		default:
-			fmt.Printf("%s: %s\n", cmd, errorMsg)
+			runExecutableHandler(cmd, args)
 		}
 	}
 }
@@ -68,6 +69,36 @@ func extractCommand(cmd string) (string, string) {
 
 func echo(args string) {
 	fmt.Println(args)
+}
+
+func runExecutableHandler(cmd string, args string) {
+	absPath, err := lookPath(cmd)
+	if err != nil {
+		fmt.Printf("%s: %s\n", cmd, errorMsg)
+
+		return
+	}
+
+	cmdArgs := parseArgs(args)
+
+	executable := exec.Command(absPath, cmdArgs...)
+
+	out, err := executable.Output()
+	if err != nil {
+		fmt.Println("err: ", err)
+
+		return
+	}
+
+	fmt.Print(string(out))
+}
+
+func parseArgs(args string) []string {
+	if len(args) == 0 {
+		return []string{}
+	}
+
+	return strings.Split(args, " ")
 }
 
 func typeFunc(args string) {
@@ -87,6 +118,7 @@ func typeFunc(args string) {
 	fmt.Printf("%s is %s\n", args, absPath)
 }
 
+// find path to executable command
 func lookPath(file string) (string, error) {
 	path := os.Getenv("PATH")
 
