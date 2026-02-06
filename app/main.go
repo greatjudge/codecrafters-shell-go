@@ -27,6 +27,7 @@ var (
 		"echo": echo,
 		"type": typeHandler,
 		"pwd":  pwd,
+		"cd":   cd,
 	}
 
 	builtIn = []string{
@@ -34,6 +35,7 @@ var (
 		"echo",
 		"type",
 		"pwd",
+		"cd",
 	}
 )
 
@@ -70,7 +72,7 @@ func echo(cmd Command) {
 func runExecutableHandler(cmd Command) {
 	cmdPath, err := lookPath(cmd.Name)
 	if err != nil {
-		fmt.Printf("%s: %s\n", cmd, errorMsg)
+		fmt.Printf("%s: %s\n", cmd.Name, errorMsg)
 
 		return
 	}
@@ -168,4 +170,21 @@ func pwd(_ Command) {
 	}
 
 	fmt.Println(d)
+}
+
+func cd(cmd Command) {
+	dir := cmd.RawArgs
+
+	err := os.Chdir(dir)
+	if err != nil {
+		if os.IsNotExist(err) {
+			fmt.Printf("cd: %v: No such file or directory\n", dir)
+
+			return
+		}
+
+		fmt.Println(err)
+
+		return
+	}
 }
