@@ -20,6 +20,7 @@ const (
 	exitCMD = "exit"
 	echoCMD = "echo"
 	typeCMD = "type"
+	pwdCMD  = "pwd"
 )
 
 var (
@@ -53,6 +54,8 @@ repl:
 			echo(args)
 		case typeCMD:
 			typeFunc(args)
+		case pwdCMD:
+			pwd()
 		default:
 			runExecutableHandler(cmd, args)
 		}
@@ -176,4 +179,15 @@ func lookPath(file string) (string, error) {
 // & 001001001 (in octal in go: 0111)
 func IsExecutedAny(mode fs.FileMode) bool {
 	return mode&0111 != 0
+}
+
+func pwd() {
+	d, err := os.Getwd()
+	if err != nil {
+		fmt.Println(err.Error())
+
+		return
+	}
+
+	fmt.Println(d)
 }
