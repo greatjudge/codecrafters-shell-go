@@ -13,6 +13,8 @@ import (
 	"github.com/samber/lo"
 )
 
+type handlerFunc func(args []string)
+
 const (
 	errorMsg = "command not found"
 	errNotFoundInPATH
@@ -28,6 +30,7 @@ var (
 		exitCMD,
 		echoCMD,
 		typeCMD,
+		pwdCMD,
 	}
 )
 
