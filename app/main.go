@@ -32,14 +32,14 @@ var (
 
 	builtIn = []string{
 		"exit",
-		"echo",
-		"type",
-		"pwd",
-		"cd",
 	}
 )
 
 func main() {
+	for k := range handlerByName {
+		builtIn = append(builtIn, k)
+	}
+
 	for {
 		fmt.Print("$ ")
 
@@ -66,7 +66,7 @@ func main() {
 }
 
 func echo(cmd Command) {
-	fmt.Println(cmd.RawArgs)
+	fmt.Println(strings.Join(cmd.Args, " "))
 }
 
 func runExecutableHandler(cmd Command) {
@@ -91,20 +91,22 @@ func runExecutableHandler(cmd Command) {
 }
 
 func typeHandler(cmd Command) {
-	if lo.Contains(builtIn, cmd.RawArgs) {
-		fmt.Printf("%v is a shell builtin\n", cmd.RawArgs)
+	for _, arg := range cmd.Args[1:] {
+		if lo.Contains(builtIn, arg) {
+			fmt.Printf("%v is a shell builtin\n", arg)
 
-		return
+			return
+		}
+
+		absPath, err := lookPath(arg)
+		if err != nil {
+			fmt.Printf("%s not found\n", arg)
+
+			return
+		}
+
+		fmt.Printf("%s is %s\n", arg, absPath)
 	}
-
-	absPath, err := lookPath(cmd.RawArgs)
-	if err != nil {
-		fmt.Printf("%s not found\n", cmd.RawArgs)
-
-		return
-	}
-
-	fmt.Printf("%s is %s\n", cmd.RawArgs, absPath)
 }
 
 // find path to executable command
@@ -173,7 +175,18 @@ func pwd(_ Command) {
 }
 
 func cd(cmd Command) {
-	dir := cmd.RawArgs
+	var dir string
+
+	switch {
+	case len(cmd.Args) < 2:
+		dir = "~"
+	case len(cmd.Args) == 2:
+		dir = cmd.Args[1]
+	default:
+		fmt.Printf("cd: too many arguments")
+
+		return
+	}
 
 	dir = insertHomeDir(dir)
 

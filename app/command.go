@@ -1,22 +1,21 @@
 package main
 
-import "strings"
+import (
+	"strings"
+)
 
 type Command struct {
-	Name    string
-	RawArgs string
-	Args    []string
+	Name string
+	Args []string
 }
 
 func NewCommand(
 	name string,
-	rawArgs string,
 	args []string,
 ) Command {
 	return Command{
-		Name:    name,
-		RawArgs: rawArgs,
-		Args:    args,
+		Name: name,
+		Args: args,
 	}
 }
 
@@ -26,9 +25,8 @@ func ParseCommand(raw string) Command {
 	name, args := extractCommand(raw)
 
 	return Command{
-		Name:    name,
-		RawArgs: args,
-		Args:    parseArgs(name, args),
+		Name: name,
+		Args: parseArgs(name, args),
 	}
 }
 
@@ -48,7 +46,47 @@ func parseArgs(cmd, args string) []string {
 		return parsed
 	}
 
-	parsed = append(parsed, strings.Split(args, " ")...)
+	for _, arg := range strings.Split(args, " ") {
+		arg = strings.Trim(arg, "'")
+		arg = strings.Replace(arg, "''", "", -1)
+
+		if arg != "" {
+			parsed = append(parsed, arg)
+		}
+	}
 
 	return parsed
+}
+
+func parseArgsV2(raw string) []string {
+	var (
+		args = []string{}
+		arg  = []rune{}
+
+		state = 1
+	)
+
+	for _, ch := range []rune(raw) {
+		switch state {
+		case 1:
+			if ch != ' ' {
+				state = 2
+				arg = append(arg, ch)
+			}
+		case 2:
+			if ch == ' ' {
+				args = append(args, string(arg))
+				arg = []rune{}
+				state = 1
+			} else {
+				arg = append(arg, ch)
+			}
+		}
+	}
+
+	if state == 2 {
+		args = append(args, string(arg))
+	}
+
+	return args
 }
