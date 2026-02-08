@@ -12,14 +12,26 @@ const (
 	spaceRuneType          runeType = 1
 	eofRuneType            runeType = 2
 	nonEscapeQuoteRuneType runeType = 3
+	escapeQuoteRuneType    runeType = 4
 )
+
+func classifyRune(r rune) runeType {
+	typeByRune := map[rune]runeType{
+		' ':  spaceRuneType,
+		'\'': nonEscapeQuoteRuneType,
+		'"':  escapeQuoteRuneType,
+	}
+
+	return typeByRune[r]
+}
 
 type parserState int
 
 const (
-	startState       parserState = 1
-	inWordState      parserState = 2
-	inNonEscapeQuote parserState = 3
+	startState            parserState = 1
+	inWordState           parserState = 2
+	inNonEscapeQuoteState parserState = 3
+	inEscapeQuoteState    parserState = 4
 )
 
 func parseArgs(raw string) ([]string, error) {
@@ -54,7 +66,11 @@ loop:
 				}
 			case nonEscapeQuoteRuneType:
 				{
-					state = inNonEscapeQuote
+					state = inNonEscapeQuoteState
+				}
+			case escapeQuoteRuneType:
+				{
+					state = inEscapeQuoteState
 				}
 			default:
 				{
@@ -79,14 +95,18 @@ loop:
 				}
 			case nonEscapeQuoteRuneType:
 				{
-					state = inNonEscapeQuote
+					state = inNonEscapeQuoteState
+				}
+			case escapeQuoteRuneType:
+				{
+					state = inEscapeQuoteState
 				}
 			default:
 				{
 					token = append(token, nextRune)
 				}
 			}
-		case inNonEscapeQuote:
+		case inNonEscapeQuoteState:
 			switch nextRuneType {
 			case eofRuneType:
 				{
@@ -104,17 +124,26 @@ loop:
 					token = append(token, nextRune)
 				}
 			}
+		case inEscapeQuoteState:
+			switch nextRuneType {
+			case eofRuneType:
+				{
+					args = append(args, string(token))
+					token = []rune{}
+					state = startState
+					break loop
+				}
+			case escapeQuoteRuneType:
+				{
+					state = inWordState
+				}
+			default:
+				{
+					token = append(token, nextRune)
+				}
+			}
 		}
 	}
 
 	return args, nil
-}
-
-func classifyRune(r rune) runeType {
-	typeByRune := map[rune]runeType{
-		' ':  spaceRuneType,
-		'\'': nonEscapeQuoteRuneType,
-	}
-
-	return typeByRune[r]
 }

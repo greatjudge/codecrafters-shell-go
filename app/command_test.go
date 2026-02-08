@@ -137,6 +137,26 @@ func Test_parseArgs(t *testing.T) {
 			raw:    "echo 'text''''",
 			expect: []string{"echo", "text"},
 		},
+		{
+			name:   "double quotes/Multiple spaces preserved",
+			raw:    `echo "hello    world"`,
+			expect: []string{"echo", "hello    world"},
+		},
+		{
+			name:   "double quotes/concatenated",
+			raw:    `echo "hello""world"`,
+			expect: []string{"echo", "helloworld"},
+		},
+		{
+			name:   "double quotes/separate",
+			raw:    `echo "hello" "world"`,
+			expect: []string{"echo", "hello", "world"},
+		},
+		{
+			name:   "double quotes/Single quotes inside are literal",
+			raw:    `echo "shell's test"`,
+			expect: []string{"echo", "shell's test"},
+		},
 	}
 
 	for _, tc := range cases {
