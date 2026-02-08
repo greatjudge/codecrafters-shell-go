@@ -157,6 +157,31 @@ func Test_parseArgs(t *testing.T) {
 			raw:    `echo "shell's test"`,
 			expect: []string{"echo", "shell's test"},
 		},
+		{
+			name:   "backslash/thee spaces",
+			raw:    `echo three\ \ \ spaces`,
+			expect: []string{"echo", "three   spaces"},
+		},
+		{
+			name:   "backslash/first space",
+			raw:    `echo before\     after`,
+			expect: []string{"echo", "before ", "after"},
+		},
+		{
+			name:   "backslash/just n",
+			raw:    `echo test\nexample`,
+			expect: []string{"echo", "testnexample"},
+		},
+		{
+			name:   "backslash/two",
+			raw:    `echo hello\\world`,
+			expect: []string{"echo", `hello\world`},
+		},
+		{
+			name:   "backslash/escape quote",
+			raw:    `echo \'hello\'`,
+			expect: []string{"echo", "'hello'"},
+		},
 	}
 
 	for _, tc := range cases {

@@ -13,6 +13,7 @@ const (
 	eofRuneType            runeType = 2
 	nonEscapeQuoteRuneType runeType = 3
 	escapeQuoteRuneType    runeType = 4
+	escapeRuneType         runeType = 5
 )
 
 func classifyRune(r rune) runeType {
@@ -20,6 +21,7 @@ func classifyRune(r rune) runeType {
 		' ':  spaceRuneType,
 		'\'': nonEscapeQuoteRuneType,
 		'"':  escapeQuoteRuneType,
+		'\\': escapeRuneType,
 	}
 
 	return typeByRune[r]
@@ -32,6 +34,7 @@ const (
 	inWordState           parserState = 2
 	inNonEscapeQuoteState parserState = 3
 	inEscapeQuoteState    parserState = 4
+	inEscapeState         parserState = 5
 )
 
 func parseArgs(raw string) ([]string, error) {
@@ -72,6 +75,10 @@ loop:
 				{
 					state = inEscapeQuoteState
 				}
+			case escapeRuneType:
+				{
+					state = inEscapeState
+				}
 			default:
 				{
 					token = append(token, nextRune)
@@ -100,6 +107,10 @@ loop:
 			case escapeQuoteRuneType:
 				{
 					state = inEscapeQuoteState
+				}
+			case escapeRuneType:
+				{
+					state = inEscapeState
 				}
 			default:
 				{
@@ -141,6 +152,19 @@ loop:
 				{
 					token = append(token, nextRune)
 				}
+			}
+		case inEscapeState:
+			switch nextRuneType {
+			case eofRuneType:
+				{
+					args = append(args, string(token))
+					token = []rune{}
+					state = startState
+					break loop
+				}
+			default:
+				token = append(token, nextRune)
+				state = inWordState
 			}
 		}
 	}
