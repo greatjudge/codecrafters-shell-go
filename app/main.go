@@ -50,7 +50,10 @@ func main() {
 			log.Panic(err)
 		}
 
-		cmd := ParseCommand(raw)
+		cmd, err := ParseCommand(raw)
+		if err != nil {
+			log.Panic(err)
+		}
 
 		if cmd.Name == exitCMD {
 			break

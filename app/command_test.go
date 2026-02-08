@@ -66,8 +66,9 @@ func TestParseCommand(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			result := ParseCommand(tc.raw)
+			result, err := ParseCommand(tc.raw)
 
+			assert.NoError(t, err)
 			assert.Equal(t, tc.expect, result)
 		})
 	}
@@ -127,9 +128,14 @@ func Test_parseArgs(t *testing.T) {
 			expect: []string{"echo", "helloworld"},
 		},
 		{
-			name:   "one single quote",
+			name:   "WTF1",
 			raw:    "echo hello'world",
 			expect: []string{"echo", "helloworld"},
+		},
+		{
+			name:   "WTF2",
+			raw:    "echo 'text''''",
+			expect: []string{"echo", "text"},
 		},
 	}
 
@@ -137,7 +143,7 @@ func Test_parseArgs(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
-			result := parseArgsV2(tc.raw)
+			result, _ := parseArgs(tc.raw)
 
 			assert.Equal(t, tc.expect, result)
 		})
