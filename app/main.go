@@ -66,7 +66,13 @@ func main() {
 }
 
 func echo(cmd Command) {
-	fmt.Println(strings.Join(cmd.Args, " "))
+	if len(cmd.Args) < 2 {
+		fmt.Printf("\n")
+
+		return
+	}
+
+	fmt.Println(strings.Join(cmd.Args[1:], " "))
 }
 
 func runExecutableHandler(cmd Command) {

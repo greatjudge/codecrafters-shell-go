@@ -46,45 +46,62 @@ func parseArgs(cmd, args string) []string {
 		return parsed
 	}
 
-	for _, arg := range strings.Split(args, " ") {
-		arg = strings.Trim(arg, "'")
-		arg = strings.Replace(arg, "''", "", -1)
-
-		if arg != "" {
-			parsed = append(parsed, arg)
-		}
-	}
+	parsed = append(parsed, parseArgsV2(args)...)
 
 	return parsed
 }
 
-func parseArgsV2(raw string) []string {
-	var (
-		args = []string{}
-		arg  = []rune{}
+const (
+	StateOutside        = 1
+	StateInArg          = 2
+	StateInSingleQuotes = 3
+)
 
-		state = 1
+func parseArgsV2(raw string) []string {
+	raw = strings.Replace(raw, "''", "", -1)
+
+	var (
+		args  = []string{}
+		arg   = []rune{}
+		state = StateOutside
 	)
 
 	for _, ch := range []rune(raw) {
 		switch state {
-		case 1:
-			if ch != ' ' {
-				state = 2
+		case StateOutside:
+			switch {
+			case ch == ' ':
+				continue
+			case ch == '\'':
+				state = StateInSingleQuotes
+			default:
 				arg = append(arg, ch)
+				state = StateInArg
 			}
-		case 2:
-			if ch == ' ' {
+		case StateInArg:
+			switch {
+			case ch == ' ':
 				args = append(args, string(arg))
 				arg = []rune{}
-				state = 1
-			} else {
+				state = StateOutside
+			case ch == '\'':
+				state = StateInSingleQuotes
+			default:
+				arg = append(arg, ch)
+			}
+		case StateInSingleQuotes:
+			switch {
+			case ch == '\'':
+				args = append(args, string(arg))
+				arg = []rune{}
+				state = StateOutside
+			default:
 				arg = append(arg, ch)
 			}
 		}
 	}
 
-	if state == 2 {
+	if (state == 2 || state == 3) && len(arg) != 0 {
 		args = append(args, string(arg))
 	}
 

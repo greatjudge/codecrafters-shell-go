@@ -106,6 +106,31 @@ func Test_parseArgs(t *testing.T) {
 			raw:    "   abc   cdv asds   cdcd  ",
 			expect: []string{"abc", "cdv", "asds", "cdcd"},
 		},
+		{
+			name:   "consecutive spaces ",
+			raw:    "echo hello    world",
+			expect: []string{"echo", "hello", "world"},
+		},
+		{
+			name:   "single quotes",
+			raw:    "echo 'hello    world'",
+			expect: []string{"echo", "hello    world"},
+		},
+		{
+			name:   "Adjacent quoted strings concatenated",
+			raw:    "echo 'hello''world'",
+			expect: []string{"echo", "helloworld"},
+		},
+		{
+			name:   "Empty quotes ignored",
+			raw:    "echo hello''world",
+			expect: []string{"echo", "helloworld"},
+		},
+		{
+			name:   "one single quote",
+			raw:    "echo hello'world",
+			expect: []string{"echo", "helloworld"},
+		},
 	}
 
 	for _, tc := range cases {
