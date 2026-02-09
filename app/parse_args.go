@@ -35,6 +35,7 @@ const (
 	inNonEscapeQuoteState parserState = 3
 	inEscapeQuoteState    parserState = 4
 	inEscapeState         parserState = 5
+	inEscapeQuotedState   parserState = 6
 )
 
 func parseArgs(raw string) ([]string, error) {
@@ -148,6 +149,10 @@ loop:
 				{
 					state = inWordState
 				}
+			case escapeRuneType:
+				{
+					state = inEscapeQuotedState
+				}
 			default:
 				{
 					token = append(token, nextRune)
@@ -165,6 +170,19 @@ loop:
 			default:
 				token = append(token, nextRune)
 				state = inWordState
+			}
+		case inEscapeQuotedState:
+			switch nextRuneType {
+			case eofRuneType:
+				{
+					args = append(args, string(token))
+					token = []rune{}
+					state = startState
+					break loop
+				}
+			default:
+				token = append(token, nextRune)
+				state = inEscapeQuoteState
 			}
 		}
 	}

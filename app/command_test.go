@@ -182,6 +182,26 @@ func Test_parseArgs(t *testing.T) {
 			raw:    `echo \'hello\'`,
 			expect: []string{"echo", "'hello'"},
 		},
+		{
+			name:   "backslashes in single quotes",
+			raw:    `echo 'shell\\\nscript'`,
+			expect: []string{"echo", `shell\\\nscript`},
+		},
+		{
+			name:   "backslashes in single quotes/second",
+			raw:    `echo 'example\"test'`,
+			expect: []string{"echo", `example\"test`},
+		},
+		{
+			name:   "Backslashes in Double Quotes/1",
+			raw:    `echo "A \\ escapes itself"`,
+			expect: []string{"echo", `A \ escapes itself`},
+		},
+		{
+			name:   "Backslashes in Double Quotes/2",
+			raw:    `echo "A \" inside double quotes"`,
+			expect: []string{"echo", `A " inside double quotes`},
+		},
 	}
 
 	for _, tc := range cases {
