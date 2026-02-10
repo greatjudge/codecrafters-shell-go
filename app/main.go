@@ -17,7 +17,6 @@ type handlerFunc func(cmd Command)
 
 const (
 	errorMsg = "command not found"
-	errNotFoundInPATH
 
 	exitCMD = "exit"
 )
@@ -65,17 +64,19 @@ func main() {
 		} else {
 			runExecutableHandler(cmd)
 		}
+
+		cmd.Close()
 	}
 }
 
 func echo(cmd Command) {
 	if len(cmd.Args) < 2 {
-		fmt.Printf("\n")
+		fmt.Fprintf(cmd.Stdout, "\n")
 
 		return
 	}
 
-	fmt.Println(strings.Join(cmd.Args[1:], " "))
+	fmt.Fprintln(cmd.Stdout, strings.Join(cmd.Args[1:], " "))
 }
 
 func runExecutableHandler(cmd Command) {
@@ -87,34 +88,29 @@ func runExecutableHandler(cmd Command) {
 	}
 
 	executable := exec.Command(cmdPath, cmd.Args[1:]...)
-	executable.Stdout = os.Stdout
+	executable.Stdout = cmd.Stdout
 	executable.Stderr = os.Stderr
 	executable.Args = cmd.Args // Set args to use original command name as args[0]
 
-	err = executable.Run()
-	if err != nil {
-		fmt.Println("err: ", err)
-
-		return
-	}
+	executable.Run()
 }
 
 func typeHandler(cmd Command) {
 	for _, arg := range cmd.Args[1:] {
 		if lo.Contains(builtIn, arg) {
-			fmt.Printf("%v is a shell builtin\n", arg)
+			fmt.Fprintf(cmd.Stdout, "%v is a shell builtin\n", arg)
 
 			return
 		}
 
 		absPath, err := lookPath(arg)
 		if err != nil {
-			fmt.Printf("%s not found\n", arg)
+			fmt.Fprintf(cmd.Stdout, "%s not found\n", arg)
 
 			return
 		}
 
-		fmt.Printf("%s is %s\n", arg, absPath)
+		fmt.Fprintf(cmd.Stdout, "%s is %s\n", arg, absPath)
 	}
 }
 
@@ -172,15 +168,15 @@ func IsExecutedAny(mode fs.FileMode) bool {
 	return mode&0111 != 0
 }
 
-func pwd(_ Command) {
+func pwd(cmd Command) {
 	d, err := os.Getwd()
 	if err != nil {
-		fmt.Println(err.Error())
+		fmt.Fprintln(cmd.Stdout, err.Error())
 
 		return
 	}
 
-	fmt.Println(d)
+	fmt.Fprintln(cmd.Stdout, d)
 }
 
 func cd(cmd Command) {
@@ -192,7 +188,7 @@ func cd(cmd Command) {
 	case len(cmd.Args) == 2:
 		dir = cmd.Args[1]
 	default:
-		fmt.Printf("cd: too many arguments")
+		fmt.Fprintf(cmd.Stdout, "cd: too many arguments")
 
 		return
 	}
@@ -202,12 +198,12 @@ func cd(cmd Command) {
 	err := os.Chdir(dir)
 	if err != nil {
 		if os.IsNotExist(err) {
-			fmt.Printf("cd: %v: No such file or directory\n", dir)
+			fmt.Fprintf(cmd.Stdout, "cd: %v: No such file or directory\n", dir)
 
 			return
 		}
 
-		fmt.Println(err)
+		fmt.Fprintln(cmd.Stdout, err.Error())
 
 		return
 	}
