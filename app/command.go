@@ -91,13 +91,13 @@ func ParseCommand(raw string) (Command, error) {
 		cmd.Stdout = os.Stdout
 	}
 
-	if redirectArgIdx < len(args) {
+	if redirectArgIdx < len(cmd.Args) {
 		j := redirectArgIdx + 1
 		if deleteTwo {
 			j = redirectArgIdx + 2
 		}
 
-		args = slices.Delete(args, redirectArgIdx, j)
+		cmd.Args = slices.Delete(cmd.Args, redirectArgIdx, j)
 	}
 
 	return cmd, nil
