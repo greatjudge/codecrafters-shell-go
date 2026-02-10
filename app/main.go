@@ -89,7 +89,7 @@ func runExecutableHandler(cmd Command) {
 
 	executable := exec.Command(cmdPath, cmd.Args[1:]...)
 	executable.Stdout = cmd.Stdout
-	executable.Stderr = os.Stderr
+	executable.Stderr = cmd.Stderr
 	executable.Args = cmd.Args // Set args to use original command name as args[0]
 
 	executable.Run()

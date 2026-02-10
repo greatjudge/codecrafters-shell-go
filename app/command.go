@@ -16,7 +16,9 @@ type Command struct {
 	Name             string
 	Args             []string
 	Stdout           io.WriteCloser
+	Stderr           io.WriteCloser
 	stdoutRedirected bool
+	stderrRedirected bool
 }
 
 func (cmd Command) Close() error {
@@ -45,39 +47,31 @@ func ParseCommand(raw string) (Command, error) {
 	}
 
 	var (
-		filename       string
-		redirectArgIdx = 0
-		deleteTwo      = false
+		filename, errFilename string
+		outIDX, errIDX        = -1, -1
 	)
 
-	for redirectArgIdx = 0; redirectArgIdx < len(args); redirectArgIdx++ {
-		a := args[redirectArgIdx]
-
-		idx := strings.Index(a, redirectArg)
-		if idx == -1 {
-			continue
-		}
-
-		// 1. > filename
-		// 2. 1> filename
-		// 3. >filename
-		// 4. 1>filename
-
-		if idx+1 >= len(a) {
-			if redirectArgIdx+1 < len(args) {
-				filename = args[redirectArgIdx+1]
-				deleteTwo = true
-			} else {
-				return Command{}, fmt.Errorf("> expect filename after it")
+	for i, a := range args {
+		switch {
+		case a == ">" || a == "1>":
+			if i+1 >= len(args) {
+				return Command{}, fmt.Errorf("expect filename after >")
 			}
-		} else {
-			filename = a[idx+1:]
-		}
 
-		break
+			filename = args[i+1]
+			outIDX = i
+		case a == "2>":
+			if i+1 >= len(args) {
+				return Command{}, fmt.Errorf("expect filename after 2>")
+			}
+
+			errFilename = args[i+1]
+			errIDX = i
+		}
 	}
 
 	filename = strings.TrimSpace(filename)
+	errFilename = strings.TrimSpace(errFilename)
 
 	if filename != "" {
 		file, err := os.Create(filename)
@@ -91,13 +85,24 @@ func ParseCommand(raw string) (Command, error) {
 		cmd.Stdout = os.Stdout
 	}
 
-	if redirectArgIdx < len(cmd.Args) {
-		j := redirectArgIdx + 1
-		if deleteTwo {
-			j = redirectArgIdx + 2
+	if outIDX != -1 {
+		cmd.Args = slices.Delete(cmd.Args, outIDX, outIDX+2)
+	}
+
+	if errFilename != "" {
+		file, err := os.Create(errFilename)
+		if err != nil {
+			return Command{}, err
 		}
 
-		cmd.Args = slices.Delete(cmd.Args, redirectArgIdx, j)
+		cmd.stderrRedirected = true
+		cmd.Stderr = file
+	} else {
+		cmd.Stderr = os.Stderr
+	}
+
+	if errIDX != -1 {
+		cmd.Args = slices.Delete(cmd.Args, errIDX, errIDX+2)
 	}
 
 	return cmd, nil
