@@ -48,6 +48,7 @@ func ParseCommand(raw string) (Command, error) {
 
 	var (
 		filename, errFilename string
+		flag                  int
 		outIDX, errIDX        = -1, -1
 	)
 
@@ -60,6 +61,15 @@ func ParseCommand(raw string) (Command, error) {
 
 			filename = args[i+1]
 			outIDX = i
+			flag = os.O_RDWR | os.O_CREATE | os.O_TRUNC
+		case a == ">>" || a == "1>>":
+			if i+1 >= len(args) {
+				return Command{}, fmt.Errorf("expect filename after >>")
+			}
+
+			filename = args[i+1]
+			outIDX = i
+			flag = os.O_RDWR | os.O_CREATE | os.O_APPEND
 		case a == "2>":
 			if i+1 >= len(args) {
 				return Command{}, fmt.Errorf("expect filename after 2>")
@@ -74,7 +84,7 @@ func ParseCommand(raw string) (Command, error) {
 	errFilename = strings.TrimSpace(errFilename)
 
 	if filename != "" {
-		file, err := os.Create(filename)
+		file, err := os.OpenFile(filename, flag, 0666)
 		if err != nil {
 			return Command{}, err
 		}
