@@ -48,7 +48,7 @@ func ParseCommand(raw string) (Command, error) {
 
 	var (
 		filename, errFilename string
-		flag                  int
+		flag, errFlag         int
 		outIDX, errIDX        = -1, -1
 	)
 
@@ -77,6 +77,15 @@ func ParseCommand(raw string) (Command, error) {
 
 			errFilename = args[i+1]
 			errIDX = i
+			errFlag = os.O_RDWR | os.O_CREATE | os.O_TRUNC
+		case a == "2>>":
+			if i+1 >= len(args) {
+				return Command{}, fmt.Errorf("expect filename after 2>>")
+			}
+
+			errFilename = args[i+1]
+			errIDX = i
+			errFlag = os.O_RDWR | os.O_CREATE | os.O_APPEND
 		}
 	}
 
@@ -100,7 +109,7 @@ func ParseCommand(raw string) (Command, error) {
 	}
 
 	if errFilename != "" {
-		file, err := os.Create(errFilename)
+		file, err := os.OpenFile(errFilename, errFlag, 0666)
 		if err != nil {
 			return Command{}, err
 		}
