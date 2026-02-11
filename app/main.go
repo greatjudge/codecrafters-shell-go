@@ -10,10 +10,11 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/codecrafters-io/shell-starter-go/app/command"
 	"github.com/samber/lo"
 )
 
-type handlerFunc func(cmd Command)
+type handlerFunc func(cmd *command.Command)
 
 const (
 	errorMsg = "command not found"
@@ -49,7 +50,7 @@ func main() {
 			log.Panic(err)
 		}
 
-		cmd, err := ParseCommand(raw)
+		cmd, err := command.ParseCommand(raw)
 		if err != nil {
 			log.Panic(err)
 		}
@@ -69,7 +70,7 @@ func main() {
 	}
 }
 
-func echo(cmd Command) {
+func echo(cmd *command.Command) {
 	if len(cmd.Args) < 2 {
 		fmt.Fprintf(cmd.Stdout, "\n")
 
@@ -79,7 +80,7 @@ func echo(cmd Command) {
 	fmt.Fprintln(cmd.Stdout, strings.Join(cmd.Args[1:], " "))
 }
 
-func runExecutableHandler(cmd Command) {
+func runExecutableHandler(cmd *command.Command) {
 	cmdPath, err := lookPath(cmd.Name)
 	if err != nil {
 		fmt.Printf("%s: %s\n", cmd.Name, errorMsg)
@@ -95,7 +96,7 @@ func runExecutableHandler(cmd Command) {
 	executable.Run()
 }
 
-func typeHandler(cmd Command) {
+func typeHandler(cmd *command.Command) {
 	for _, arg := range cmd.Args[1:] {
 		if lo.Contains(builtIn, arg) {
 			fmt.Fprintf(cmd.Stdout, "%v is a shell builtin\n", arg)
@@ -168,7 +169,7 @@ func IsExecutedAny(mode fs.FileMode) bool {
 	return mode&0111 != 0
 }
 
-func pwd(cmd Command) {
+func pwd(cmd *command.Command) {
 	d, err := os.Getwd()
 	if err != nil {
 		fmt.Fprintln(cmd.Stdout, err.Error())
@@ -179,7 +180,7 @@ func pwd(cmd Command) {
 	fmt.Fprintln(cmd.Stdout, d)
 }
 
-func cd(cmd Command) {
+func cd(cmd *command.Command) {
 	var dir string
 
 	switch {
