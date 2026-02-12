@@ -3,10 +3,11 @@ package tokenizer
 type TokenType int
 
 const (
-	WordTokenType           TokenType = 1
-	RedirectTokenType       TokenType = 2
-	RedirectErrTokenType    TokenType = 3
-	AppendRedirectTokenType TokenType = 4
+	WordTokenType              TokenType = 1
+	RedirectTokenType          TokenType = 2
+	RedirectErrTokenType       TokenType = 3
+	AppendRedirectTokenType    TokenType = 4
+	AppendRedirectErrTokenType TokenType = 5
 )
 
 type Token struct {
@@ -38,6 +39,13 @@ func NewTokenRedirectErr(value string) Token {
 func NewTokenAppendRedirect(value string) Token {
 	return Token{
 		Type:  AppendRedirectTokenType,
+		Value: value,
+	}
+}
+
+func NewTokenAppendRedirectErr(value string) Token {
+	return Token{
+		Type:  AppendRedirectErrTokenType,
 		Value: value,
 	}
 }

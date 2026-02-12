@@ -38,20 +38,22 @@ func classifyRune(r rune) runeType {
 type parserState int
 
 const (
-	startState               parserState = 1
-	inWordState              parserState = 2
-	inNonEscapeQuoteState    parserState = 3
-	inEscapeQuoteState       parserState = 4
-	inEscapeState            parserState = 5
-	inEscapeQuotedState      parserState = 6
-	inRedirectSymb           parserState = 7
-	inRedirectReadName       parserState = 8
-	inOneState               parserState = 9
-	inRedirectErrSymb        parserState = 10
-	inRedirectErrReadName    parserState = 11
-	inTwo                    parserState = 12
-	inAppendRedirect         parserState = 13
-	inAppendRedirectReadName parserState = 14
+	startState                  parserState = 1
+	inWordState                 parserState = 2
+	inNonEscapeQuoteState       parserState = 3
+	inEscapeQuoteState          parserState = 4
+	inEscapeState               parserState = 5
+	inEscapeQuotedState         parserState = 6
+	inRedirectSymb              parserState = 7
+	inRedirectReadName          parserState = 8
+	inOneState                  parserState = 9
+	inRedirectErrSymb           parserState = 10
+	inRedirectErrReadName       parserState = 11
+	inTwo                       parserState = 12
+	inAppendRedirect            parserState = 13
+	inAppendRedirectReadName    parserState = 14
+	inAppendRedirectErr         parserState = 15
+	inAppendRedirectErrReadName parserState = 16
 )
 
 func Tokenize(raw string) ([]Token, error) {
@@ -318,6 +320,10 @@ loop:
 				{
 					return nil, fmt.Errorf("expect filename after redirect symbol")
 				}
+			case redirectRuneType:
+				{
+					state = inAppendRedirectErr
+				}
 			default:
 				tokenValue = append(tokenValue, nextRune)
 				state = inRedirectErrReadName
@@ -375,7 +381,41 @@ loop:
 					tokenValue = append(tokenValue, nextRune)
 				}
 			}
+		case inAppendRedirectErr:
+			switch nextRuneType {
+			case spaceRuneType:
+				{
+				}
+			case eofRuneType:
+				{
+					return nil, fmt.Errorf("expect filename after redirect symbol")
+				}
+			default:
+				tokenValue = append(tokenValue, nextRune)
+				state = inAppendRedirectErrReadName
+			}
+		case inAppendRedirectErrReadName:
+			switch nextRuneType {
+			case spaceRuneType:
+				{
+					tokens = append(tokens, NewTokenAppendRedirectErr(string(tokenValue)))
+					tokenValue = []rune{}
+					state = startState
+				}
+			case eofRuneType:
+				{
+					tokens = append(tokens, NewTokenAppendRedirectErr(string(tokenValue)))
+					tokenValue = []rune{}
+					state = startState
+					break loop
+				}
+			default:
+				{
+					tokenValue = append(tokenValue, nextRune)
+				}
+			}
 		}
+
 	}
 
 	return tokens, nil

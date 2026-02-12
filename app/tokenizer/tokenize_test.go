@@ -317,7 +317,7 @@ func Test_Tokenize(t *testing.T) {
 				NewTokenWord("hello2"),
 				NewTokenRedirect("file"),
 			},
-		}, ///
+		},
 		{
 			name: "Append Redirect",
 			raw:  `echo >> file`,
@@ -350,6 +350,31 @@ func Test_Tokenize(t *testing.T) {
 				NewTokenWord("echo"),
 				NewTokenWord("hello"),
 				NewTokenAppendRedirect("file"),
+			},
+		}, ///
+		{
+			name: "Append Redirect Err",
+			raw:  `echo 2>> file`,
+			expect: []Token{
+				NewTokenWord("echo"),
+				NewTokenAppendRedirectErr("file"),
+			},
+		},
+		{
+			name: "Append Redirect/stick right",
+			raw:  `echo 2>>file`,
+			expect: []Token{
+				NewTokenWord("echo"),
+				NewTokenAppendRedirectErr("file"),
+			},
+		},
+		{
+			name: "Append Redirect/left right exist",
+			raw:  `echo  2>> file hello`,
+			expect: []Token{
+				NewTokenWord("echo"),
+				NewTokenAppendRedirectErr("file"),
+				NewTokenWord("hello"),
 			},
 		},
 	}

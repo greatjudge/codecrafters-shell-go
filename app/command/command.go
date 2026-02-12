@@ -62,12 +62,16 @@ func splitTokens(tokens []tokenizer.Token) (args []string, redirectStdout, redir
 	args = []string{}
 
 	for _, t := range tokens {
-		switch t.Type {
-		case tokenizer.RedirectTokenType, tokenizer.AppendRedirectTokenType:
-			redirectStdout = NewRedirectionFromToken(t)
-		case tokenizer.RedirectErrTokenType:
-			redirectStderr = NewRedirectionFromToken(t)
-		case tokenizer.WordTokenType:
+		switch {
+		case checkTokenTypeIsRedirection(t.Type):
+			redirection := NewRedirectionFromToken(t)
+			switch redirection.StreamType {
+			case StdoutStreamType:
+				redirectStdout = redirection
+			case StderrStreamType:
+				redirectStderr = redirection
+			}
+		case t.Type == tokenizer.WordTokenType:
 			args = append(args, t.Value)
 		}
 	}

@@ -18,6 +18,19 @@ const (
 	StderrStreamType StreamType = 2
 )
 
+var (
+	redirectionTokenTypes = map[tokenizer.TokenType]bool{
+		tokenizer.RedirectTokenType:          true,
+		tokenizer.AppendRedirectTokenType:    true,
+		tokenizer.RedirectErrTokenType:       true,
+		tokenizer.AppendRedirectErrTokenType: true,
+	}
+)
+
+func checkTokenTypeIsRedirection(t tokenizer.TokenType) bool {
+	return redirectionTokenTypes[t]
+}
+
 type Redirection struct {
 	WriteType  RedirectionWriteType
 	StreamType StreamType
@@ -45,6 +58,12 @@ func NewRedirectionFromToken(t tokenizer.Token) Redirection {
 	case tokenizer.RedirectErrTokenType:
 		return Redirection{
 			WriteType:  RewriteRedirectionWriteType,
+			StreamType: StderrStreamType,
+			Filename:   t.Value,
+		}
+	case tokenizer.AppendRedirectErrTokenType:
+		return Redirection{
+			WriteType:  AppendRedirectionWriteType,
 			StreamType: StderrStreamType,
 			Filename:   t.Value,
 		}
