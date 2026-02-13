@@ -3,7 +3,6 @@ package command
 import (
 	"io"
 	"os"
-	"strings"
 
 	"github.com/codecrafters-io/shell-starter-go/app/tokenizer"
 )
@@ -30,8 +29,6 @@ func (cmd Command) Close() error {
 }
 
 func ParseCommand(raw string) (*Command, error) {
-	raw = strings.TrimSpace(raw)
-
 	tokens, err := tokenizer.Tokenize(raw)
 	if err != nil {
 		return nil, err

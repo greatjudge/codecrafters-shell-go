@@ -1,8 +1,8 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
+	"io"
 	"io/fs"
 	"log"
 	"os"
@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/chzyer/readline"
 	"github.com/codecrafters-io/shell-starter-go/app/command"
 	"github.com/samber/lo"
 )
@@ -40,17 +41,43 @@ func main() {
 		builtIn = append(builtIn, k)
 	}
 
+	completeItems := make([]readline.PrefixCompleterInterface, 0, len(builtIn))
+	for _, c := range builtIn {
+		completeItems = append(completeItems, readline.PcItem(c))
+	}
+
+	completer := readline.NewPrefixCompleter(
+		completeItems...,
+	)
+
+	l, err := readline.NewEx(&readline.Config{
+		AutoComplete:    completer,
+		InterruptPrompt: "^C",
+		EOFPrompt:       "exit",
+	})
+	if err != nil {
+		log.Panic(err)
+	}
+	defer l.Close()
+	l.CaptureExitSignal()
+
+	l.SetPrompt("$ ")
+
 	for {
-		fmt.Print("$ ")
-
-		reader := bufio.NewReader(os.Stdin)
-
-		raw, err := reader.ReadString('\n')
-		if err != nil {
-			log.Panic(err)
+		line, err := l.Readline()
+		if err == readline.ErrInterrupt {
+			if len(line) == 0 {
+				break
+			} else {
+				continue
+			}
+		} else if err == io.EOF {
+			break
 		}
 
-		cmd, err := command.ParseCommand(raw)
+		line = strings.TrimSpace(line)
+
+		cmd, err := command.ParseCommand(line)
 		if err != nil {
 			log.Panic(err)
 		}
