@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io"
 	"io/fs"
 	"log"
 	"os"
@@ -12,8 +11,13 @@ import (
 
 	"github.com/chzyer/readline"
 	"github.com/codecrafters-io/shell-starter-go/app/command"
+	"github.com/codecrafters-io/shell-starter-go/app/liner"
 	"github.com/samber/lo"
+	"golang.org/x/term"
 )
+
+// TODO: ADD MAKE RAW AND BACK TO UNRAW
+// https://chat.deepseek.com/a/chat/s/3e530b91-022d-4f79-bc43-c674f2d70613
 
 type handlerFunc func(cmd *command.Command)
 
@@ -46,34 +50,27 @@ func main() {
 		completeItems = append(completeItems, readline.PcItem(c))
 	}
 
-	completer := readline.NewPrefixCompleter(
-		completeItems...,
-	)
-
-	l, err := readline.NewEx(&readline.Config{
-		AutoComplete:    completer,
-		InterruptPrompt: "^C",
-		EOFPrompt:       "exit",
-	})
-	if err != nil {
-		log.Panic(err)
-	}
+	l := liner.NewLiner("$ ")
 	defer l.Close()
-	l.CaptureExitSignal()
 
-	l.SetPrompt("$ ")
+	go func() {
+		l.Run()
+	}()
 
-	for {
-		line, err := l.Readline()
-		if err == readline.ErrInterrupt {
-			if len(line) == 0 {
-				break
-			} else {
-				continue
-			}
-		} else if err == io.EOF {
-			break
-		}
+	waiter := l.Waiter()
+
+	fd := int(os.Stdin.Fd())
+
+	// switch stdin into 'raw' mode
+	oldState, err := term.MakeRaw(fd)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer term.Restore(fd, oldState)
+
+	for line := range l.ReadLiner() {
+		term.Restore(fd, oldState)
 
 		line = strings.TrimSpace(line)
 
@@ -94,6 +91,14 @@ func main() {
 		}
 
 		cmd.Close()
+
+		oldState, err = term.MakeRaw(fd)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
+		waiter <- struct{}{}
 	}
 }
 

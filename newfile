@@ -1,0 +1,16 @@
+total 56
+drwxr-xr-x@ 15 argalkin  staff   480 Feb 14 20:07 .
+drwxr-xr-x@  4 argalkin  staff   128 Feb  8 18:33 ..
+drwxr-xr-x@  4 argalkin  staff   128 Feb  5 11:43 .codecrafters
+drwxr-xr-x@ 14 argalkin  staff   448 Feb 14 20:04 .git
+-rw-r--r--@  1 argalkin  staff    11 Feb  5 16:49 .gitattributes
+-rw-r--r--@  1 argalkin  staff    14 Feb  8 17:11 .gitignore
+drwxr-xr-x@  3 argalkin  staff    96 Feb  5 16:19 .vscode
+-rw-r--r--@  1 argalkin  staff  1359 Feb  5 11:43 README.md
+drwxr-xr-x@  6 argalkin  staff   192 Feb 14 20:04 app
+-rw-r--r--@  1 argalkin  staff   278 Feb  5 11:43 codecrafters.yml
+drwxr-xr-x   3 argalkin  staff    96 Feb  8 16:50 docs
+-rw-r--r--@  1 argalkin  staff   524 Feb 14 12:35 go.mod
+-rw-r--r--@  1 argalkin  staff  2277 Feb 14 12:35 go.sum
+-rw-r--r--@  1 argalkin  staff     0 Feb 14 20:07 newfile
+-rwxr-xr-x@  1 argalkin  staff   773 Feb  5 11:43 your_program.sh
