@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"os"
+
+	"golang.org/x/term"
 )
 
 // print prompt
@@ -32,6 +34,9 @@ type Liner struct {
 
 	readchan chan string
 	waiter   chan struct{}
+
+	oldState *term.State
+	stdin    *os.File
 }
 
 func NewLiner(prompt string) *Liner {
@@ -41,6 +46,7 @@ func NewLiner(prompt string) *Liner {
 		cursorPos:   0,
 		readchan:    make(chan string),
 		waiter:      make(chan struct{}),
+		stdin:       os.Stdin,
 	}
 }
 
@@ -59,6 +65,9 @@ func (l *Liner) Waiter() chan<- struct{} {
 // Run - start terminal
 func (l *Liner) Run() {
 	reader := bufio.NewReader(os.Stdin)
+
+	l.makeRaw()
+	defer l.restoreFromRaw()
 
 	for {
 		fmt.Printf("\r%s", l.prompt)
@@ -102,6 +111,19 @@ func (l *Liner) Run() {
 	}
 }
 
+func (l *Liner) makeRaw() error {
+	var err error
+
+	// switch stdin into 'raw' mode
+	l.oldState, err = term.MakeRaw(int(l.stdin.Fd()))
+
+	return err
+}
+
+func (l *Liner) restoreFromRaw() error {
+	return term.Restore(int(l.stdin.Fd()), l.oldState)
+}
+
 func (l *Liner) reDrawLine() {
 	fmt.Printf("%s\r", csiCleanLine)                               // clean line
 	fmt.Printf("%s%s", l.prompt, string(l.currentLine))            // print current string
@@ -125,9 +147,13 @@ func (l *Liner) insertRune(r rune) {
 func (l *Liner) enter() {
 	fmt.Printf("\n\r")
 
+	l.restoreFromRaw()
+
 	l.readchan <- string(l.currentLine)
 
 	<-l.waiter // wait for (ATTENTION POTENTIAL DEADLOCK)
+
+	l.makeRaw()
 
 	l.currentLine = []rune{}
 	l.cursorPos = 0

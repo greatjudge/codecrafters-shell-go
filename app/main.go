@@ -13,7 +13,6 @@ import (
 	"github.com/codecrafters-io/shell-starter-go/app/command"
 	"github.com/codecrafters-io/shell-starter-go/app/liner"
 	"github.com/samber/lo"
-	"golang.org/x/term"
 )
 
 // TODO: ADD MAKE RAW AND BACK TO UNRAW
@@ -59,19 +58,7 @@ func main() {
 
 	waiter := l.Waiter()
 
-	fd := int(os.Stdin.Fd())
-
-	// switch stdin into 'raw' mode
-	oldState, err := term.MakeRaw(fd)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	defer term.Restore(fd, oldState)
-
 	for line := range l.ReadLiner() {
-		term.Restore(fd, oldState)
-
 		line = strings.TrimSpace(line)
 
 		cmd, err := command.ParseCommand(line)
@@ -91,12 +78,6 @@ func main() {
 		}
 
 		cmd.Close()
-
-		oldState, err = term.MakeRaw(fd)
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
 
 		waiter <- struct{}{}
 	}
