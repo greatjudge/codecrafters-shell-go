@@ -34,6 +34,7 @@ type Liner struct {
 
 	readchan chan string
 	waiter   chan struct{}
+	kickread chan struct{}
 
 	oldState *term.State
 	stdin    *os.File
@@ -70,6 +71,8 @@ func (l *Liner) Run() {
 	defer l.restoreFromRaw()
 
 	for {
+		_ = <-l.kickread
+
 		fmt.Printf("\r%s", l.prompt)
 
 	readline:
